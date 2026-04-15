@@ -34,7 +34,8 @@ def main():
     parser.add_argument("--force", action="store_true", help="Re-render existing outputs")
     parser.add_argument("--models", nargs="*", help="Limit to specific model slugs")
     parser.add_argument("--garments", nargs="*", help="Limit to specific garment slugs")
-    parser.add_argument("--steps", type=int, default=10, help="Diffusion steps (default 10 for CPU speed; 30 for best quality)")
+    parser.add_argument("--steps", type=int, default=10, help="Diffusion steps (default 10; use 30 for best quality)")
+    parser.add_argument("--weights", type=str, default="fashn-vton-1.5/weights", help="Path to FASHN weights directory")
     args = parser.parse_args()
 
     model_dir   = Path("assets/models")
@@ -105,7 +106,7 @@ def main():
             if pipeline is None:
                 print("\n  ⏳ Loading FASHN pipeline (first time)...")
                 from fashn_vton import TryOnPipeline
-                pipeline = TryOnPipeline(weights_dir="fashn-vton-1.5/weights")
+                pipeline = TryOnPipeline(weights_dir=args.weights)
                 print("  ✅ Pipeline loaded\n")
 
             person  = Image.open(model_path).convert("RGB")
