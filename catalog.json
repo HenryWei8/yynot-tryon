@@ -1,0 +1,53 @@
+{
+  "brand": "YYNOT?",
+  "models": [
+    "01350_00",
+    "01376_00",
+    "01416_00",
+    "model1"
+  ],
+  "garments": [
+    {
+      "id": "01449_00",
+      "name": "01449 00",
+      "category": "tops",
+      "thumbnail": "assets/garments/01449_00.jpg",
+      "renders": {}
+    },
+    {
+      "id": "01486_00",
+      "name": "01486 00",
+      "category": "tops",
+      "thumbnail": "assets/garments/01486_00.jpg",
+      "renders": {}
+    },
+    {
+      "id": "01853_00",
+      "name": "01853 00",
+      "category": "tops",
+      "thumbnail": "assets/garments/01853_00.jpg",
+      "renders": {}
+    },
+    {
+      "id": "02070_00",
+      "name": "02070 00",
+      "category": "tops",
+      "thumbnail": "assets/garments/02070_00.jpg",
+      "renders": {}
+    },
+    {
+      "id": "03553_00",
+      "name": "03553 00",
+      "category": "tops",
+      "thumbnail": "assets/garments/03553_00.jpg",
+      "renders": {}
+    },
+    {
+      "id": "shirt1",
+      "name": "Shirt1",
+      "category": "tops",
+      "thumbnail": "assets/garments/shirt1.webp",
+      "renders": {}
+    }
+  ]
+}

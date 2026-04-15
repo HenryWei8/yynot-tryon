@@ -1,0 +1,17 @@
+# FASHN inference engine (clone separately on server)
+fashn-vton-1.5/
+
+# Rendered outputs (generated on server)
+assets/renders/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Temp download cache
+/tmp/
