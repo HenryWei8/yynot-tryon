@@ -35,6 +35,7 @@ def main():
     parser.add_argument("--models", nargs="*", help="Limit to specific model slugs")
     parser.add_argument("--garments", nargs="*", help="Limit to specific garment slugs")
     parser.add_argument("--steps", type=int, default=10, help="Diffusion steps (default 10; use 30 for best quality)")
+    parser.add_argument("--guidance", type=float, default=2.5, help="Guidance scale (default 2.5; higher = more faithful to garment)")
     parser.add_argument("--weights", type=str, default="fashn-vton-1.5/weights", help="Path to FASHN weights directory")
     args = parser.parse_args()
 
@@ -118,6 +119,7 @@ def main():
                 garment_image=garment,
                 category=category,
                 num_timesteps=args.steps,
+                guidance_scale=args.guidance,
             )
             result.images[0].save(str(out_path), quality=92)
             print(f"✅ saved → {out_path}")
