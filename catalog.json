@@ -2,52 +2,72 @@
   "brand": "YYNOT?",
   "models": [
     "01350_00",
-    "01376_00",
-    "01416_00",
-    "model1"
+    "01416_00"
   ],
   "garments": [
     {
       "id": "01449_00",
-      "name": "01449 00",
+      "name": "Graphic Band Tee",
       "category": "tops",
       "thumbnail": "assets/garments/01449_00.jpg",
-      "renders": {}
+      "renders": {
+        "01350_00": "assets/renders/01350_00__01449_00.jpg",
+        "01416_00": "assets/renders/01416_00__01449_00.jpg"
+      }
     },
     {
       "id": "01486_00",
-      "name": "01486 00",
+      "name": "Raglan Sleeve Top",
       "category": "tops",
       "thumbnail": "assets/garments/01486_00.jpg",
-      "renders": {}
+      "renders": {
+        "01350_00": "assets/renders/01350_00__01486_00.jpg",
+        "01416_00": "assets/renders/01416_00__01486_00.jpg"
+      }
     },
     {
       "id": "01853_00",
-      "name": "01853 00",
+      "name": "FASHN Logo Tee",
       "category": "tops",
       "thumbnail": "assets/garments/01853_00.jpg",
-      "renders": {}
+      "renders": {
+        "01416_00": "assets/renders/01416_00__01853_00.jpg",
+        "01350_00": "assets/renders/01350_00__01853_00.jpg"
+      }
     },
     {
       "id": "02070_00",
-      "name": "02070 00",
+      "name": "Printed Crop Top",
       "category": "tops",
       "thumbnail": "assets/garments/02070_00.jpg",
-      "renders": {}
+      "renders": {
+        "01416_00": "assets/renders/01416_00__02070_00.jpg",
+        "01350_00": "assets/renders/01350_00__02070_00.jpg"
+      }
     },
     {
       "id": "03553_00",
-      "name": "03553 00",
+      "name": "Oversized Varsity",
       "category": "tops",
       "thumbnail": "assets/garments/03553_00.jpg",
-      "renders": {}
+      "renders": {
+        "01350_00": "assets/renders/01350_00__03553_00.jpg",
+        "01416_00": "assets/renders/01416_00__03553_00.jpg"
+      }
     },
     {
       "id": "shirt1",
-      "name": "Shirt1",
+      "name": "Classic White Tee",
       "category": "tops",
       "thumbnail": "assets/garments/shirt1.webp",
-      "renders": {}
+      "renders": {
+        "01350_00": "assets/renders/01350_00__shirt1.jpg",
+        "01416_00": "assets/renders/01416_00__shirt1.jpg"
+      }
     }
-  ]
+  ],
+  "models_meta": {
+    "01350_00": "Yuna",
+    "01416_00": "Mika"
+  }
 }

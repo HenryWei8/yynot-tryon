@@ -34,9 +34,10 @@ def main():
     parser.add_argument("--force", action="store_true", help="Re-render existing outputs")
     parser.add_argument("--models", nargs="*", help="Limit to specific model slugs")
     parser.add_argument("--garments", nargs="*", help="Limit to specific garment slugs")
-    parser.add_argument("--steps", type=int, default=10, help="Diffusion steps (default 10; use 30 for best quality)")
-    parser.add_argument("--guidance", type=float, default=2.5, help="Guidance scale (default 2.5; higher = more faithful to garment)")
-    parser.add_argument("--skip-cfg", type=int, default=0, help="Skip CFG for last N steps (default 0 = full guidance; helps boundary/hem quality)")
+    parser.add_argument("--steps", type=int, default=50, help="Diffusion steps (default 50; 30=balanced, 50=quality)")
+    parser.add_argument("--guidance", type=float, default=2.5, help="Guidance scale (default 2.5)")
+    parser.add_argument("--skip-cfg", type=int, default=1, help="Skip CFG for last N steps (default 1)")
+    parser.add_argument("--garment-type", type=str, default="flat-lay", choices=["flat-lay", "model"], help="Garment photo type (default: flat-lay)")
     parser.add_argument("--weights", type=str, default="fashn-vton-1.5/weights", help="Path to FASHN weights directory")
     args = parser.parse_args()
 
@@ -119,6 +120,7 @@ def main():
                 person_image=person,
                 garment_image=garment,
                 category=category,
+                garment_photo_type=args.garment_type,
                 num_timesteps=args.steps,
                 guidance_scale=args.guidance,
                 skip_cfg_last_n_steps=args.skip_cfg,
