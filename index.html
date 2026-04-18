@@ -331,6 +331,97 @@
   .filter-pill.active { border-color: var(--orange); color: var(--text-dim); }
   .filter-pill .dot { background: #1a1a1a; }
   .filter-pill.active .dot { background: var(--orange); }
+
+  /* ── CHAT WIDGET ── */
+  #chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  #chat-toggle {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: #111;
+    border: 1px solid var(--orange);
+    color: var(--orange);
+    cursor: pointer;
+    font-size: 17px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, box-shadow 0.15s;
+    flex-shrink: 0;
+  }
+  #chat-toggle:hover { background: var(--orange-dim); box-shadow: 0 0 14px rgba(224,124,58,0.3); }
+  #chat-toggle.active { background: var(--orange); color: #111; }
+
+  #chat-panel {
+    width: 290px; height: 390px;
+    background: #0c0c0c;
+    border: 1px solid #1e1e1e;
+    border-radius: 14px;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transform-origin: bottom right;
+    transform: scale(0.88) translateY(12px);
+    opacity: 0; pointer-events: none;
+    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), opacity 0.18s;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+  }
+  #chat-panel.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
+
+  #chat-header {
+    padding: 11px 14px;
+    border-bottom: 1px solid #181818;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #chat-title { font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #888; }
+  #chat-close { background: none; border: none; color: #333; cursor: pointer; font-size: 19px; line-height: 1; padding: 0; transition: color 0.15s; }
+  #chat-close:hover { color: #777; }
+
+  #chat-messages {
+    flex: 1; overflow-y: auto; padding: 11px 10px;
+    display: flex; flex-direction: column; gap: 9px;
+    scrollbar-width: none;
+  }
+  #chat-messages::-webkit-scrollbar { display: none; }
+
+  .chat-msg {
+    max-width: 92%; font-size: 12px; line-height: 1.55;
+    padding: 9px 11px; border-radius: 10px;
+    animation: msgIn 0.18s ease;
+  }
+  @keyframes msgIn { from { opacity:0; transform: translateY(5px); } to { opacity:1; transform: translateY(0); } }
+  .chat-msg.bot  { background: #141414; border: 1px solid #1e1e1e; color: #c0c0c0; align-self: flex-start; }
+  .chat-msg.user { background: var(--orange-dim); border: 1px solid rgba(224,124,58,0.18); color: var(--text); align-self: flex-end; }
+  .chat-msg.typing { color: #3a3a3a; font-style: italic; }
+  .chat-divider { font-size: 9px; color: #242424; text-align: center; letter-spacing: 0.08em; padding: 2px 0; }
+
+  #chat-input-row {
+    padding: 9px 10px; border-top: 1px solid #181818;
+    display: flex; gap: 7px; flex-shrink: 0;
+  }
+  #chat-input {
+    flex: 1; background: #111; border: 1px solid #1e1e1e;
+    border-radius: 8px; color: var(--text); font-size: 12px;
+    padding: 7px 11px; outline: none; font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  #chat-input:focus { border-color: #2e2e2e; }
+  #chat-input::placeholder { color: #2e2e2e; }
+  #chat-send {
+    width: 32px; height: 32px; background: var(--orange);
+    border: none; border-radius: 8px; color: #111;
+    cursor: pointer; font-size: 15px; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+  #chat-send:hover { opacity: 0.85; }
+  #chat-send:disabled { opacity: 0.25; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -388,6 +479,23 @@
 
 </div>
 
+<!-- CHAT WIDGET -->
+<div id="chat-widget">
+  <div id="chat-panel">
+    <div id="chat-header">
+      <span id="chat-title">Style Check</span>
+      <button id="chat-close">×</button>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-row">
+      <input id="chat-input" type="text" placeholder="Ask about this look…" autocomplete="off" />
+      <button id="chat-send">↑</button>
+    </div>
+  </div>
+  <button id="chat-toggle" title="Style analysis">✦</button>
+</div>
+
+<script src="config.js"></script>
 <script>
 'use strict';
 
@@ -621,6 +729,9 @@ function updatePreview() {
     dlBtn.onclick = null;
   };
   probe.src = renderPath;
+
+  // Trigger chat re-analysis when garment/model changes
+  if (typeof chatOpen !== 'undefined' && chatOpen) setTimeout(() => autoAnalyze(), 120);
 }
 
 // ── Preload neighbors ──
@@ -653,6 +764,283 @@ document.addEventListener('keydown', e => {
 document.getElementById('btn-expand').addEventListener('click', () => {
   const src = document.getElementById('layer-back').src;
   if (src && !src.endsWith('/')) window.open(src, '_blank');
+});
+
+// ─────────────────────────────────────────────
+// CHAT + COLOR ANALYSIS
+// ─────────────────────────────────────────────
+
+const GROQ_API_KEY = window.GROQ_API_KEY || '';
+const GROQ_MODEL   = 'llama-3.3-70b-versatile';
+const SYSTEM_PROMPT = `You are a direct, no-nonsense personal stylist with 15 years of experience. Analyze outfit color combinations using professional color theory.
+
+Rules:
+- If it works, say so and briefly explain why (undertone match, contrast, harmony)
+- If it doesn't work, be honest — explain specifically why and suggest a better direction
+- Consider skin undertone (warm/cool/neutral/olive) when evaluating clothing colors
+- For tops+bottoms combos, evaluate the palette cohesion
+- Never be vague. Give a concrete opinion.
+- 2–3 sentences max. Sound like a real person texting a friend, not a brochure.`;
+
+let chatHistory  = [];
+let chatOpen     = false;
+let analyzing    = false;
+let lastAnalyzedKey = '';
+
+// ── Color math ──
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h, s, l = (max + min) / 2;
+  if (max === min) { h = s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g-b)/d + (g<b?6:0)) / 6; break;
+      case g: h = ((b-r)/d + 2) / 6; break;
+      case b: h = ((r-g)/d + 4) / 6; break;
+    }
+  }
+  return [h*360, s*100, l*100];
+}
+
+function isSkinPixel(r, g, b) {
+  const [h, s, l] = rgbToHsl(r, g, b);
+  return h >= 0 && h <= 45 && s >= 8 && s <= 75 && l >= 25 && l <= 80
+    && r > g && r > b; // skin: red channel dominant
+}
+
+function describeColor(r, g, b) {
+  const [h, s, l] = rgbToHsl(r, g, b);
+  if (s < 9) {
+    if (l < 18) return 'black'; if (l < 38) return 'charcoal';
+    if (l < 58) return 'gray'; if (l < 80) return 'light gray'; return 'off-white';
+  }
+  let hue;
+  if      (h < 14 || h >= 345) hue = 'red';
+  else if (h < 30)  hue = 'orange-red';
+  else if (h < 48)  hue = 'orange';
+  else if (h < 60)  hue = 'amber';
+  else if (h < 75)  hue = 'yellow';
+  else if (h < 105) hue = 'yellow-green';
+  else if (h < 152) hue = 'green';
+  else if (h < 178) hue = 'teal';
+  else if (h < 198) hue = 'cyan';
+  else if (h < 228) hue = 'sky blue';
+  else if (h < 258) hue = 'blue';
+  else if (h < 275) hue = 'indigo';
+  else if (h < 295) hue = 'purple';
+  else if (h < 320) hue = 'violet';
+  else              hue = 'pink';
+  let pre = '';
+  if      (l < 18) pre = 'near-black ';
+  else if (l < 30) pre = 'deep ';
+  else if (l < 42) pre = 'dark ';
+  else if (l > 80) pre = 'pale ';
+  else if (l > 65) pre = 'light ';
+  if (s < 22) pre = 'muted ' + pre;
+  return (pre + hue).trim();
+}
+
+function describeSkinTone(r, g, b) {
+  const [h, s, l] = rgbToHsl(r, g, b);
+  const depth = l > 72 ? 'fair' : l > 62 ? 'light' : l > 52 ? 'medium' : l > 42 ? 'medium-deep' : l > 32 ? 'deep' : 'very deep';
+  const undertone = h < 18 ? 'warm' : h < 34 ? 'warm-neutral' : h < 48 ? 'olive' : 'neutral';
+  return `${depth} skin with ${undertone} undertones`;
+}
+
+// ── Image color extraction via Canvas ──
+async function extractSkinTone(modelId) {
+  const extensions = ['jpg', 'png', 'webp'];
+  for (const ext of extensions) {
+    try {
+      const result = await new Promise((res, rej) => {
+        const img = new Image();
+        img.onload = () => {
+          const W = img.naturalWidth, H = img.naturalHeight;
+          const canvas = document.createElement('canvas');
+          canvas.width = W; canvas.height = H;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          // Sample face/neck region: top 5–24% height, center 25–75% width
+          const x0 = Math.floor(W*0.25), x1 = Math.floor(W*0.75);
+          const y0 = Math.floor(H*0.04), y1 = Math.floor(H*0.24);
+          const d = ctx.getImageData(x0, y0, x1-x0, y1-y0).data;
+          let rs=0, gs=0, bs=0, n=0;
+          for (let i = 0; i < d.length; i += 4) {
+            if (isSkinPixel(d[i], d[i+1], d[i+2])) { rs+=d[i]; gs+=d[i+1]; bs+=d[i+2]; n++; }
+          }
+          if (n < 20) { rej(); return; }
+          res(describeSkinTone(Math.round(rs/n), Math.round(gs/n), Math.round(bs/n)));
+        };
+        img.onerror = rej;
+        img.src = `assets/models/${modelId}.${ext}`;
+      });
+      return result;
+    } catch { continue; }
+  }
+  return null;
+}
+
+async function extractGarmentColors(thumbnailSrc) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const W = img.naturalWidth, H = img.naturalHeight;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      const d = canvas.getContext('2d').getImageData(0, 0, W, H).data;
+      const buckets = {};
+      for (let i = 0; i < d.length; i += 12) {
+        const r=d[i], g=d[i+1], b=d[i+2], a=d[i+3];
+        if (a < 100) continue;
+        if (r>228 && g>228 && b>228) continue; // skip white bg
+        if (r<22  && g<22  && b<22)  continue; // skip black
+        const key = `${Math.round(r/24)*24},${Math.round(g/24)*24},${Math.round(b/24)*24}`;
+        buckets[key] = (buckets[key]||0) + 1;
+      }
+      const sorted = Object.entries(buckets).sort((a,b) => b[1]-a[1]);
+      if (!sorted.length) { res('neutral'); return; }
+      const names = sorted.slice(0, 3).map(([k]) => {
+        const [r,g,b] = k.split(',').map(Number);
+        return describeColor(r, g, b);
+      });
+      const unique = [...new Set(names)];
+      res(unique.slice(0, 2).join(' and '));
+    };
+    img.onerror = () => res('neutral');
+    img.src = thumbnailSrc;
+  });
+}
+
+// ── Groq API ──
+async function callGroq(messages) {
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      messages: [{ role:'system', content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 180,
+      temperature: 0.72
+    })
+  });
+  if (!r.ok) throw new Error(`${r.status}`);
+  return (await r.json()).choices[0].message.content.trim();
+}
+
+// ── Chat UI helpers ──
+function addMsg(role, text, isTyping=false) {
+  const el = document.createElement('div');
+  el.className = `chat-msg ${role}` + (isTyping ? ' typing' : '');
+  el.dataset.typing = isTyping;
+  el.textContent = text;
+  document.getElementById('chat-messages').appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth' });
+  return el;
+}
+function addDivider(text) {
+  const el = document.createElement('div');
+  el.className = 'chat-divider';
+  el.textContent = text;
+  document.getElementById('chat-messages').appendChild(el);
+}
+function removeTyping() {
+  document.querySelectorAll('.chat-msg[data-typing="true"]').forEach(e => e.remove());
+}
+function setSendDisabled(v) { document.getElementById('chat-send').disabled = v; }
+
+// ── Auto-analysis on garment/model change ──
+async function autoAnalyze() {
+  if (!chatOpen || analyzing || !catalog || !selectedId || !selectedModel) return;
+  const key = `${selectedModel}__${selectedId}`;
+  if (key === lastAnalyzedKey) return;
+  lastAnalyzedKey = key;
+
+  const garment = catalog.garments.find(g => g.id === selectedId);
+  if (!garment) return;
+
+  analyzing = true;
+  setSendDisabled(true);
+
+  if (document.getElementById('chat-messages').children.length > 0) {
+    addDivider('— ' + garment.name + ' —');
+  }
+
+  const typing = addMsg('bot', '…', true);
+  chatHistory = []; // reset per outfit
+
+  try {
+    const [skin, garmentColor] = await Promise.all([
+      extractSkinTone(selectedModel),
+      extractGarmentColors(garment.thumbnail)
+    ]);
+
+    const catLabel = garment.category === 'one-pieces' ? 'one-piece' : garment.category === 'bottoms' ? 'bottom' : 'top';
+    const modelName = (catalog.models_meta || {})[selectedModel] || selectedModel;
+    const prompt = skin
+      ? `${modelName} has ${skin}. They're wearing a ${garmentColor} ${catLabel} called "${garment.name}". How does this color work for them?`
+      : `Styling a ${garmentColor} ${catLabel} called "${garment.name}". How does this color read as a standalone piece?`;
+
+    chatHistory = [{ role:'user', content: prompt }];
+    const reply = await callGroq(chatHistory);
+    chatHistory.push({ role:'assistant', content: reply });
+
+    typing.remove();
+    addMsg('bot', reply);
+  } catch(e) {
+    typing.remove();
+    addMsg('bot', 'Connection issue — try again.');
+  }
+
+  analyzing = false;
+  setSendDisabled(false);
+}
+
+// ── User message send ──
+async function sendUserMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || analyzing) return;
+  input.value = '';
+  addMsg('user', text);
+  chatHistory.push({ role:'user', content: text });
+
+  analyzing = true;
+  setSendDisabled(true);
+  const typing = addMsg('bot', '…', true);
+
+  try {
+    const reply = await callGroq(chatHistory);
+    chatHistory.push({ role:'assistant', content: reply });
+    typing.remove();
+    addMsg('bot', reply);
+  } catch {
+    typing.remove();
+    addMsg('bot', 'Something went wrong.');
+  }
+
+  analyzing = false;
+  setSendDisabled(false);
+}
+
+// ── Chat widget wiring ──
+document.getElementById('chat-toggle').addEventListener('click', () => {
+  chatOpen = !chatOpen;
+  document.getElementById('chat-panel').classList.toggle('open', chatOpen);
+  document.getElementById('chat-toggle').classList.toggle('active', chatOpen);
+  if (chatOpen) autoAnalyze();
+});
+document.getElementById('chat-close').addEventListener('click', () => {
+  chatOpen = false;
+  document.getElementById('chat-panel').classList.remove('open');
+  document.getElementById('chat-toggle').classList.remove('active');
+});
+document.getElementById('chat-send').addEventListener('click', sendUserMessage);
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendUserMessage();
 });
 
 init();

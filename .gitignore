@@ -15,3 +15,6 @@ __pycache__/
 
 # Temp download cache
 /tmp/
+
+# Local API keys — never commit
+config.js
