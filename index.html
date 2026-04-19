@@ -429,15 +429,34 @@
   .popup-tag.style-uniform    { color: #666; background: #0f0f0f; border: 1px solid #222; }
   .popup-tag.fit              { color: #363636; background: transparent; border: 1px solid #1a1a1a; }
 
-  #popup-divider { height: 1px; background: #181818; margin: 0 0 11px; }
+  #popup-tabs {
+    display: flex;
+    border-bottom: 1px solid #181818;
+    margin: 10px -15px 12px;
+    padding: 0 15px;
+    gap: 0;
+  }
+  .ptab {
+    flex: 1; text-align: center;
+    font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 7px 4px 6px; cursor: pointer;
+    color: #2e2e2e;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+    user-select: none;
+  }
+  .ptab:hover { color: #555; }
+  .ptab.active { color: var(--orange); border-bottom-color: var(--orange); }
 
   #popup-body {
     font-size: 12px; line-height: 1.65; color: #999;
-    min-height: 54px;
+    min-height: 52px;
   }
   #popup-body.loading { color: #252525; font-style: italic; }
+  #popup-body.coming-soon { color: #252525; font-style: italic; font-size: 11px; min-height: 0; }
   @keyframes fadeInText { from { opacity:0; } to { opacity:1; } }
-  #popup-body.loaded { animation: fadeInText 0.35s ease; }
+  #popup-body.loaded { animation: fadeInText 0.3s ease; }
 </style>
 </head>
 <body>
@@ -509,7 +528,11 @@
     </div>
   </div>
   <div id="popup-tags"></div>
-  <div id="popup-divider"></div>
+  <div id="popup-tabs">
+    <div class="ptab active" data-tab="color">Color</div>
+    <div class="ptab" data-tab="fit">Fit</div>
+    <div class="ptab" data-tab="texture">Texture</div>
+  </div>
   <div id="popup-body"></div>
 </div>
 <button id="style-btn" title="Style analysis  [S]">✦</button>
@@ -797,14 +820,16 @@ document.getElementById('btn-expand').addEventListener('click', () => {
 
 const GROQ_API_KEY = window.GROQ_API_KEY || '';
 const GROQ_MODEL   = 'llama-3.3-70b-versatile';
-const SYSTEM_PROMPT = `Personal stylist, 15 years experience. First person only. Two sentences max — no exceptions.
+const PROMPTS = {
+  color: `Personal stylist. First person. One sentence only — no exceptions.
+Rate how the garment color works with the model's skin tone: undertone compatibility, contrast, whether it pops or washes out. If it doesn't work, say so and name one better color direction. No filler.`,
 
-Sentence 1: color verdict (skin tone + undertone compatibility, does it pop or wash out).
-Sentence 2: fit/silhouette + overall vibe (does the cut flatter, does the style land).
+  fit: `Personal stylist. First person. One sentence only — no exceptions.
+Rate the fit and silhouette: does the cut flatter the body, how does it drape, does the style land where it should. If something's off, say so plainly. No filler.`,
+};
 
-If something doesn't work, say so plainly and name a better direction. No hedging, no lists, no filler.`;
-
-const analysisCache = {};   // key: "modelId__garmentId" → analysis string
+const analysisCache = {};  // key → { color, fit }
+let activeTab   = 'color';
 let popupOpen   = false;
 let analyzing   = false;
 
@@ -972,15 +997,18 @@ async function extractGarmentColors(thumbnailSrc) {
 }
 
 // ── Groq API ──
-async function callGroq(messages) {
+async function callGroq(promptKey, userContent) {
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: GROQ_MODEL,
-      messages: [{ role:'system', content: SYSTEM_PROMPT }, ...messages],
-      max_tokens: 90,
-      temperature: 0.72
+      messages: [
+        { role: 'system', content: PROMPTS[promptKey] },
+        { role: 'user',   content: userContent }
+      ],
+      max_tokens: 80,
+      temperature: 0.7
     })
   });
   if (!r.ok) throw new Error(`${r.status}`);
@@ -999,7 +1027,7 @@ function styleClass(styleLabel) {
 }
 
 // ── Popup helpers ──
-function setPopupContent(garment, text, isLoading) {
+function renderPopupMeta(garment) {
   document.getElementById('popup-garment-name').textContent = garment.name;
   const tagsEl = document.getElementById('popup-tags');
   tagsEl.innerHTML = '';
@@ -1010,10 +1038,32 @@ function setPopupContent(garment, text, isLoading) {
   const ft = document.createElement('span');
   ft.className = 'popup-tag fit'; ft.textContent = fitLabel;
   tagsEl.append(st, ft);
+}
 
+function renderTabContent(cache) {
   const body = document.getElementById('popup-body');
-  body.textContent = text;
-  body.className = isLoading ? 'loading' : 'loaded';
+  if (activeTab === 'texture') {
+    body.textContent = 'Coming soon.';
+    body.className = 'coming-soon';
+    return;
+  }
+  const text = cache?.[activeTab];
+  if (!text) {
+    body.textContent = 'Analyzing…';
+    body.className = 'loading';
+  } else {
+    body.textContent = text;
+    body.className = 'loaded';
+  }
+}
+
+function setActiveTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.ptab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === tab)
+  );
+  const key = selectedModel && selectedId ? `${selectedModel}__${selectedId}` : null;
+  renderTabContent(key ? analysisCache[key] : null);
 }
 
 function openPopup() {
@@ -1027,22 +1077,25 @@ function closePopup() {
   document.getElementById('style-btn').classList.remove('active');
 }
 
-// ── Analysis (cached per model__garment) ──
+// ── Analysis (cached per model__garment, both tabs fetched in parallel) ──
 async function showAnalysis() {
   if (!catalog || !selectedId || !selectedModel) return;
   const key     = `${selectedModel}__${selectedId}`;
   const garment = catalog.garments.find(g => g.id === selectedId);
   if (!garment) return;
 
-  // Serve from cache instantly
-  if (analysisCache[key]) {
-    setPopupContent(garment, analysisCache[key], false);
+  renderPopupMeta(garment);
+
+  // Serve from cache instantly if complete
+  if (analysisCache[key]?.color && analysisCache[key]?.fit) {
+    renderTabContent(analysisCache[key]);
     return;
   }
 
   if (analyzing) return;
   analyzing = true;
-  setPopupContent(garment, 'Analyzing…', true);
+  analysisCache[key] = {};
+  renderTabContent(analysisCache[key]);
 
   try {
     const [skin, garmentColor] = await Promise.all([
@@ -1054,15 +1107,26 @@ async function showAnalysis() {
     const modelName = (catalog.models_meta || {})[selectedModel] || selectedModel;
     const styleType = classifyStyle(garment.name, garment.category);
     const fitDesc   = classifyFit(garment.name);
-    const prompt = skin
-      ? `${modelName} has ${skin}. They're trying on a ${garmentColor} ${catLabel} — ${styleType} style, ${fitDesc} — called "${garment.name}". Analyze the color vs their skin tone, the fit and silhouette, and overall vibe.`
-      : `Styling a ${garmentColor} ${catLabel} — ${styleType} style, ${fitDesc} — called "${garment.name}". Analyze the color, fit/silhouette, and overall vibe.`;
 
-    const reply = await callGroq([{ role:'user', content: prompt }]);
-    analysisCache[key] = reply;
-    setPopupContent(garment, reply, false);
+    const colorCtx = skin
+      ? `${modelName} has ${skin}. Garment: ${garmentColor} ${catLabel} called "${garment.name}".`
+      : `Garment: ${garmentColor} ${catLabel} called "${garment.name}".`;
+    const fitCtx = `${modelName || 'Model'} is wearing a ${garmentColor} ${catLabel} — ${styleType} style, ${fitDesc} — called "${garment.name}".`;
+
+    // Fetch both in parallel; update each tab as it resolves
+    const colorP = callGroq('color', colorCtx).then(r => {
+      analysisCache[key].color = r;
+      if (activeTab === 'color') renderTabContent(analysisCache[key]);
+    }).catch(() => { analysisCache[key].color = 'Could not load.'; });
+
+    const fitP = callGroq('fit', fitCtx).then(r => {
+      analysisCache[key].fit = r;
+      if (activeTab === 'fit') renderTabContent(analysisCache[key]);
+    }).catch(() => { analysisCache[key].fit = 'Could not load.'; });
+
+    await Promise.all([colorP, fitP]);
   } catch {
-    setPopupContent(garment, 'Could not load analysis.', false);
+    renderTabContent(null);
   }
 
   analyzing = false;
@@ -1079,6 +1143,9 @@ document.getElementById('popup-refresh').addEventListener('click', () => {
   if (!selectedId || !selectedModel) return;
   delete analysisCache[`${selectedModel}__${selectedId}`];
   showAnalysis();
+});
+document.querySelectorAll('.ptab').forEach(t => {
+  t.addEventListener('click', () => setActiveTab(t.dataset.tab));
 });
 
 // Re-analyze when garment or model changes while popup is open
