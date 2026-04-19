@@ -360,18 +360,12 @@
     transition: color 0.2s;
   }
 
-  /* ── CHAT WIDGET ── */
-  #chat-widget {
+  /* ── STYLE POPUP ── */
+  #style-btn {
     position: fixed;
     bottom: 20px;
     right: 20px;
     z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 10px;
-  }
-  #chat-toggle {
     width: 42px; height: 42px;
     border-radius: 50%;
     background: #111;
@@ -381,75 +375,56 @@
     font-size: 17px;
     display: flex; align-items: center; justify-content: center;
     transition: background 0.15s, box-shadow 0.15s;
-    flex-shrink: 0;
   }
-  #chat-toggle:hover { background: var(--orange-dim); box-shadow: 0 0 14px rgba(224,124,58,0.3); }
-  #chat-toggle.active { background: var(--orange); color: #111; }
+  #style-btn:hover { background: var(--orange-dim); box-shadow: 0 0 14px rgba(224,124,58,0.3); }
+  #style-btn.active { background: var(--orange); color: #111; }
 
-  #chat-panel {
-    width: 290px; height: 390px;
+  #style-popup {
+    position: fixed;
+    bottom: 72px;
+    right: 20px;
+    z-index: 999;
+    width: 280px;
     background: #0c0c0c;
     border: 1px solid #1e1e1e;
     border-radius: 14px;
-    display: flex; flex-direction: column;
-    overflow: hidden;
+    padding: 16px 16px 14px;
     transform-origin: bottom right;
-    transform: scale(0.88) translateY(12px);
+    transform: scale(0.88) translateY(10px);
     opacity: 0; pointer-events: none;
-    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), opacity 0.18s;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), opacity 0.18s;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.75);
   }
-  #chat-panel.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
+  #style-popup.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
 
-  #chat-header {
-    padding: 11px 14px;
-    border-bottom: 1px solid #181818;
-    display: flex; align-items: center; justify-content: space-between;
-    flex-shrink: 0;
+  #popup-garment-name {
+    font-size: 11px; font-weight: 600; color: #888;
+    letter-spacing: 0.06em; margin-bottom: 10px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  #chat-title { font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #888; }
-  #chat-close { background: none; border: none; color: #333; cursor: pointer; font-size: 19px; line-height: 1; padding: 0; transition: color 0.15s; }
-  #chat-close:hover { color: #777; }
-
-  #chat-messages {
-    flex: 1; overflow-y: auto; padding: 11px 10px;
-    display: flex; flex-direction: column; gap: 9px;
-    scrollbar-width: none;
+  #popup-tags {
+    display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;
   }
-  #chat-messages::-webkit-scrollbar { display: none; }
-
-  .chat-msg {
-    max-width: 92%; font-size: 12px; line-height: 1.55;
-    padding: 9px 11px; border-radius: 10px;
-    animation: msgIn 0.18s ease;
+  .popup-tag {
+    font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #444; background: #111; border: 1px solid #1e1e1e;
+    border-radius: 4px; padding: 2px 8px;
   }
-  @keyframes msgIn { from { opacity:0; transform: translateY(5px); } to { opacity:1; transform: translateY(0); } }
-  .chat-msg.bot  { background: #141414; border: 1px solid #1e1e1e; color: #c0c0c0; align-self: flex-start; }
-  .chat-msg.user { background: var(--orange-dim); border: 1px solid rgba(224,124,58,0.18); color: var(--text); align-self: flex-end; }
-  .chat-msg.typing { color: #3a3a3a; font-style: italic; }
-  .chat-divider { font-size: 9px; color: #242424; text-align: center; letter-spacing: 0.08em; padding: 2px 0; }
-
-  #chat-input-row {
-    padding: 9px 10px; border-top: 1px solid #181818;
-    display: flex; gap: 7px; flex-shrink: 0;
+  #popup-body {
+    font-size: 12.5px; line-height: 1.6; color: #b0b0b0;
+    min-height: 60px;
   }
-  #chat-input {
-    flex: 1; background: #111; border: 1px solid #1e1e1e;
-    border-radius: 8px; color: var(--text); font-size: 12px;
-    padding: 7px 11px; outline: none; font-family: inherit;
-    transition: border-color 0.15s;
+  #popup-body.loading { color: #2e2e2e; font-style: italic; }
+  #popup-divider {
+    height: 1px; background: #181818; margin: 12px 0 10px;
   }
-  #chat-input:focus { border-color: #2e2e2e; }
-  #chat-input::placeholder { color: #2e2e2e; }
-  #chat-send {
-    width: 32px; height: 32px; background: var(--orange);
-    border: none; border-radius: 8px; color: #111;
-    cursor: pointer; font-size: 15px; display: flex;
-    align-items: center; justify-content: center; flex-shrink: 0;
-    transition: opacity 0.15s;
+  #popup-close {
+    position: absolute; top: 12px; right: 13px;
+    background: none; border: none; color: #2e2e2e;
+    cursor: pointer; font-size: 18px; line-height: 1; padding: 0;
+    transition: color 0.15s;
   }
-  #chat-send:hover { opacity: 0.85; }
-  #chat-send:disabled { opacity: 0.25; cursor: not-allowed; }
+  #popup-close:hover { color: #666; }
 </style>
 </head>
 <body>
@@ -511,21 +486,15 @@
 
 </div>
 
-<!-- CHAT WIDGET -->
-<div id="chat-widget">
-  <div id="chat-panel">
-    <div id="chat-header">
-      <span id="chat-title">Style Check</span>
-      <button id="chat-close">×</button>
-    </div>
-    <div id="chat-messages"></div>
-    <div id="chat-input-row">
-      <input id="chat-input" type="text" placeholder="Ask about this look…" autocomplete="off" />
-      <button id="chat-send">↑</button>
-    </div>
-  </div>
-  <button id="chat-toggle" title="Style analysis">✦</button>
+<!-- STYLE POPUP -->
+<div id="style-popup">
+  <button id="popup-close">×</button>
+  <div id="popup-garment-name"></div>
+  <div id="popup-tags"></div>
+  <div id="popup-divider"></div>
+  <div id="popup-body"></div>
 </div>
+<button id="style-btn" title="Style analysis">✦</button>
 
 <script src="config.js"></script>
 <script>
@@ -764,8 +733,7 @@ function updatePreview() {
   };
   probe.src = renderPath;
 
-  // Trigger chat re-analysis when garment/model changes
-  if (typeof chatOpen !== 'undefined' && chatOpen) setTimeout(() => autoAnalyze(), 120);
+  if (typeof onSelectionChange !== 'undefined') setTimeout(onSelectionChange, 80);
 }
 
 // ── Preload neighbors ──
@@ -801,7 +769,7 @@ document.getElementById('btn-expand').addEventListener('click', () => {
 });
 
 // ─────────────────────────────────────────────
-// CHAT + COLOR ANALYSIS
+// STYLE POPUP + COLOR ANALYSIS
 // ─────────────────────────────────────────────
 
 const GROQ_API_KEY = window.GROQ_API_KEY || '';
@@ -818,10 +786,9 @@ Rules:
 - Never hedge. Give a concrete opinion.
 - 3–4 sentences total. Sound like a real friend who happens to know fashion, not a written report.`;
 
-let chatHistory  = [];
-let chatOpen     = false;
-let analyzing    = false;
-let lastAnalyzedKey = '';
+const analysisCache = {};   // key: "modelId__garmentId" → analysis string
+let popupOpen   = false;
+let analyzing   = false;
 
 // ── Style / fit classifiers ──
 function classifyStyle(name, category) {
@@ -1002,46 +969,48 @@ async function callGroq(messages) {
   return (await r.json()).choices[0].message.content.trim();
 }
 
-// ── Chat UI helpers ──
-function addMsg(role, text, isTyping=false) {
-  const el = document.createElement('div');
-  el.className = `chat-msg ${role}` + (isTyping ? ' typing' : '');
-  el.dataset.typing = isTyping;
-  el.textContent = text;
-  document.getElementById('chat-messages').appendChild(el);
-  el.scrollIntoView({ behavior: 'smooth' });
-  return el;
+// ── Popup helpers ──
+function setPopupContent(garment, text, isLoading) {
+  const meta = catalog?.models_meta || {};
+  document.getElementById('popup-garment-name').textContent = garment.name;
+  const tagsEl = document.getElementById('popup-tags');
+  tagsEl.innerHTML = '';
+  [classifyStyle(garment.name, garment.category), classifyFit(garment.name)].forEach(t => {
+    const s = document.createElement('span');
+    s.className = 'popup-tag'; s.textContent = t; tagsEl.appendChild(s);
+  });
+  const body = document.getElementById('popup-body');
+  body.textContent = text;
+  body.className = 'popup-body' + (isLoading ? ' loading' : '');
 }
-function addDivider(text) {
-  const el = document.createElement('div');
-  el.className = 'chat-divider';
-  el.textContent = text;
-  document.getElementById('chat-messages').appendChild(el);
-}
-function removeTyping() {
-  document.querySelectorAll('.chat-msg[data-typing="true"]').forEach(e => e.remove());
-}
-function setSendDisabled(v) { document.getElementById('chat-send').disabled = v; }
 
-// ── Auto-analysis on garment/model change ──
-async function autoAnalyze() {
-  if (!chatOpen || analyzing || !catalog || !selectedId || !selectedModel) return;
-  const key = `${selectedModel}__${selectedId}`;
-  if (key === lastAnalyzedKey) return;
-  lastAnalyzedKey = key;
+function openPopup() {
+  popupOpen = true;
+  document.getElementById('style-popup').classList.add('open');
+  document.getElementById('style-btn').classList.add('active');
+}
+function closePopup() {
+  popupOpen = false;
+  document.getElementById('style-popup').classList.remove('open');
+  document.getElementById('style-btn').classList.remove('active');
+}
 
+// ── Analysis (cached per model__garment) ──
+async function showAnalysis() {
+  if (!catalog || !selectedId || !selectedModel) return;
+  const key     = `${selectedModel}__${selectedId}`;
   const garment = catalog.garments.find(g => g.id === selectedId);
   if (!garment) return;
 
-  analyzing = true;
-  setSendDisabled(true);
-
-  if (document.getElementById('chat-messages').children.length > 0) {
-    addDivider('— ' + garment.name + ' —');
+  // Serve from cache instantly
+  if (analysisCache[key]) {
+    setPopupContent(garment, analysisCache[key], false);
+    return;
   }
 
-  const typing = addMsg('bot', '…', true);
-  chatHistory = []; // reset per outfit
+  if (analyzing) return;
+  analyzing = true;
+  setPopupContent(garment, 'Analyzing…', true);
 
   try {
     const [skin, garmentColor] = await Promise.all([
@@ -1057,64 +1026,28 @@ async function autoAnalyze() {
       ? `${modelName} has ${skin}. They're trying on a ${garmentColor} ${catLabel} — ${styleType} style, ${fitDesc} — called "${garment.name}". Analyze the color vs their skin tone, the fit and silhouette, and overall vibe.`
       : `Styling a ${garmentColor} ${catLabel} — ${styleType} style, ${fitDesc} — called "${garment.name}". Analyze the color, fit/silhouette, and overall vibe.`;
 
-    chatHistory = [{ role:'user', content: prompt }];
-    const reply = await callGroq(chatHistory);
-    chatHistory.push({ role:'assistant', content: reply });
-
-    typing.remove();
-    addMsg('bot', reply);
-  } catch(e) {
-    typing.remove();
-    addMsg('bot', 'Connection issue — try again.');
-  }
-
-  analyzing = false;
-  setSendDisabled(false);
-}
-
-// ── User message send ──
-async function sendUserMessage() {
-  const input = document.getElementById('chat-input');
-  const text = input.value.trim();
-  if (!text || analyzing) return;
-  input.value = '';
-  addMsg('user', text);
-  chatHistory.push({ role:'user', content: text });
-
-  analyzing = true;
-  setSendDisabled(true);
-  const typing = addMsg('bot', '…', true);
-
-  try {
-    const reply = await callGroq(chatHistory);
-    chatHistory.push({ role:'assistant', content: reply });
-    typing.remove();
-    addMsg('bot', reply);
+    const reply = await callGroq([{ role:'user', content: prompt }]);
+    analysisCache[key] = reply;
+    setPopupContent(garment, reply, false);
   } catch {
-    typing.remove();
-    addMsg('bot', 'Something went wrong.');
+    setPopupContent(garment, 'Could not load analysis.', false);
   }
 
   analyzing = false;
-  setSendDisabled(false);
 }
 
-// ── Chat widget wiring ──
-document.getElementById('chat-toggle').addEventListener('click', () => {
-  chatOpen = !chatOpen;
-  document.getElementById('chat-panel').classList.toggle('open', chatOpen);
-  document.getElementById('chat-toggle').classList.toggle('active', chatOpen);
-  if (chatOpen) autoAnalyze();
+// ── Popup wiring ──
+document.getElementById('style-btn').addEventListener('click', () => {
+  if (popupOpen) { closePopup(); return; }
+  openPopup();
+  showAnalysis();
 });
-document.getElementById('chat-close').addEventListener('click', () => {
-  chatOpen = false;
-  document.getElementById('chat-panel').classList.remove('open');
-  document.getElementById('chat-toggle').classList.remove('active');
-});
-document.getElementById('chat-send').addEventListener('click', sendUserMessage);
-document.getElementById('chat-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') sendUserMessage();
-});
+document.getElementById('popup-close').addEventListener('click', closePopup);
+
+// Re-analyze when garment or model changes while popup is open
+function onSelectionChange() {
+  if (popupOpen) showAnalysis();
+}
 
 init();
 </script>
