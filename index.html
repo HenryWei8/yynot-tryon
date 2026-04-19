@@ -332,6 +332,34 @@
   .filter-pill .dot { background: #1a1a1a; }
   .filter-pill.active .dot { background: var(--orange); }
 
+  /* ── STYLE TYPE TAG ── */
+  #style-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    margin-top: -6px;
+  }
+  #style-tag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #555;
+    background: #111;
+    border: 1px solid #1e1e1e;
+    border-radius: 5px;
+    padding: 3px 9px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  #fit-tag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: #383838;
+    transition: color 0.2s;
+  }
+
   /* ── CHAT WIDGET ── */
   #chat-widget {
     position: fixed;
@@ -456,6 +484,10 @@
       <div id="brand-row">
         <span id="brand">Prototype II</span>
         <span id="garment-name"></span>
+      </div>
+      <div id="style-row">
+        <span id="style-tag"></span>
+        <span id="fit-tag"></span>
       </div>
       <div class="section-label">Model</div>
       <div class="pill-row" id="model-pills"></div>
@@ -612,6 +644,8 @@ function selectGarment(id) {
   if (sel) sel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   updatePreview();
   preloadNeighbors(id);
+  const g = catalog?.garments.find(g => g.id === id);
+  if (g && typeof updateStyleTag !== 'undefined') updateStyleTag(g);
 }
 
 // ── Scan-line transition ──
@@ -772,20 +806,57 @@ document.getElementById('btn-expand').addEventListener('click', () => {
 
 const GROQ_API_KEY = window.GROQ_API_KEY || '';
 const GROQ_MODEL   = 'llama-3.3-70b-versatile';
-const SYSTEM_PROMPT = `You are a direct, no-nonsense personal stylist with 15 years of experience. Analyze outfit color combinations using professional color theory.
+const SYSTEM_PROMPT = `You are a personal stylist with 15 years of experience. Always speak in first person — "I think", "I'd say", "I love", "I'd be honest with you".
+
+Cover three things in every analysis:
+1. Color — does this shade suit their skin tone? Speak to undertone compatibility, contrast, whether it washes them out or makes them pop.
+2. Fit & Silhouette — how does this cut sit on the body? Is the silhouette flattering?
+3. Style vibe — does the piece land where it's supposed to?
 
 Rules:
-- If it works, say so and briefly explain why (undertone match, contrast, harmony)
-- If it doesn't work, be honest — explain specifically why and suggest a better direction
-- Consider skin undertone (warm/cool/neutral/olive) when evaluating clothing colors
-- For tops+bottoms combos, evaluate the palette cohesion
-- Never be vague. Give a concrete opinion.
-- 2–3 sentences max. Sound like a real person texting a friend, not a brochure.`;
+- Be honest when something doesn't work — say why, then suggest a redirect
+- Never hedge. Give a concrete opinion.
+- 3–4 sentences total. Sound like a real friend who happens to know fashion, not a written report.`;
 
 let chatHistory  = [];
 let chatOpen     = false;
 let analyzing    = false;
 let lastAnalyzedKey = '';
+
+// ── Style / fit classifiers ──
+function classifyStyle(name, category) {
+  const n = name.toLowerCase();
+  if (/suit|blazer|dress.shirt|slacks|trouser/.test(n)) return 'Business';
+  if (/polo|chino|khaki|cardigan|loafer|button.down/.test(n)) return 'Business Casual';
+  if (/uniform|scrubs|workwear/.test(n)) return 'Uniform';
+  if (/varsity|graphic|streetwear|cargo|hoodie|sweatshirt/.test(n)) return 'Streetwear';
+  if (/crop|mini|bodycon|slip|cami/.test(n)) return 'Going Out';
+  if (/athletic|sport|gym|track|workout|yoga|jogger/.test(n)) return 'Athletic';
+  if (/denim|jean/.test(n)) return 'Casual';
+  if (/oversized/.test(n)) return 'Casual / Streetwear';
+  return 'Casual';
+}
+
+function classifyFit(name) {
+  const n = name.toLowerCase();
+  if (/oversized|baggy|relaxed/.test(n)) return 'Oversized';
+  if (/crop|cropped/.test(n)) return 'Cropped';
+  if (/slim|skinny|fitted|tight/.test(n)) return 'Slim fit';
+  if (/straight|regular|classic/.test(n)) return 'Regular fit';
+  if (/raglan/.test(n)) return 'Raglan cut';
+  if (/wide|flare/.test(n)) return 'Wide leg';
+  return 'Regular fit';
+}
+
+function updateStyleTag(garment) {
+  if (!garment) return;
+  const style = classifyStyle(garment.name, garment.category);
+  const fit   = classifyFit(garment.name);
+  const styleEl = document.getElementById('style-tag');
+  const fitEl   = document.getElementById('fit-tag');
+  if (styleEl) { styleEl.textContent = style; styleEl.style.display = ''; }
+  if (fitEl)   { fitEl.textContent   = fit;   fitEl.style.display   = ''; }
+}
 
 // ── Color math ──
 function rgbToHsl(r, g, b) {
@@ -978,11 +1049,13 @@ async function autoAnalyze() {
       extractGarmentColors(garment.thumbnail)
     ]);
 
-    const catLabel = garment.category === 'one-pieces' ? 'one-piece' : garment.category === 'bottoms' ? 'bottom' : 'top';
+    const catLabel  = garment.category === 'one-pieces' ? 'one-piece' : garment.category === 'bottoms' ? 'bottom' : 'top';
     const modelName = (catalog.models_meta || {})[selectedModel] || selectedModel;
+    const styleType = classifyStyle(garment.name, garment.category);
+    const fitDesc   = classifyFit(garment.name);
     const prompt = skin
-      ? `${modelName} has ${skin}. They're wearing a ${garmentColor} ${catLabel} called "${garment.name}". How does this color work for them?`
-      : `Styling a ${garmentColor} ${catLabel} called "${garment.name}". How does this color read as a standalone piece?`;
+      ? `${modelName} has ${skin}. They're trying on a ${garmentColor} ${catLabel} — ${styleType} style, ${fitDesc} — called "${garment.name}". Analyze the color vs their skin tone, the fit and silhouette, and overall vibe.`
+      : `Styling a ${garmentColor} ${catLabel} — ${styleType} style, ${fitDesc} — called "${garment.name}". Analyze the color, fit/silhouette, and overall vibe.`;
 
     chatHistory = [{ role:'user', content: prompt }];
     const reply = await callGroq(chatHistory);
