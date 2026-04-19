@@ -12,15 +12,15 @@
     --card-bg:     #0f0f0f;
     --card-border: #1c1c1c;
     --card-hover:  #333;
-    --orange:      #e07c3a;
-    --orange-dim:  rgba(224,124,58,0.15);
+    --orange:      #8892f8;
+    --orange-dim:  rgba(136,146,248,0.13);
     --pill-bg:     #141414;
     --pill-border: #252525;
     --preview-bg:  #efefef;
     --text:        #f0f0f0;
     --text-dim:    #666;
     --gap:         2px;
-    --scan-color:  rgba(224,124,58,0.9);
+    --scan-color:  rgba(136,146,248,0.9);
   }
 
   html, body {
@@ -145,7 +145,7 @@
       var(--scan-color) 80%,
       transparent 100%
     );
-    box-shadow: 0 0 12px 3px rgba(224,124,58,0.6), 0 0 2px 1px #fff;
+    box-shadow: 0 0 12px 3px rgba(136,146,248,0.6), 0 0 2px 1px #fff;
     top: 0;
     transform: translateY(0);
   }
@@ -422,7 +422,7 @@
     border-radius: 4px; padding: 2px 7px;
   }
   .popup-tag.style-casual     { color: #555; background: #111; border: 1px solid #1e1e1e; }
-  .popup-tag.style-streetwear { color: #b06020; background: rgba(224,124,58,0.07); border: 1px solid rgba(224,124,58,0.18); }
+  .popup-tag.style-streetwear { color: #7a83ee; background: rgba(136,146,248,0.07); border: 1px solid rgba(136,146,248,0.2); }
   .popup-tag.style-business   { color: #4a7aa8; background: rgba(74,122,168,0.07); border: 1px solid rgba(74,122,168,0.2); }
   .popup-tag.style-athletic   { color: #4a8a5a; background: rgba(74,138,90,0.07); border: 1px solid rgba(74,138,90,0.2); }
   .popup-tag.style-going-out  { color: #8a5aaa; background: rgba(138,90,170,0.07); border: 1px solid rgba(138,90,170,0.2); }
@@ -440,13 +440,13 @@
     flex: 1; text-align: center;
     font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
     padding: 7px 4px 6px; cursor: pointer;
-    color: #2e2e2e;
+    color: #484848;
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
     transition: color 0.15s, border-color 0.15s;
     user-select: none;
   }
-  .ptab:hover { color: #555; }
+  .ptab:hover { color: #888; }
   .ptab.active { color: var(--orange); border-bottom-color: var(--orange); }
 
   #popup-body {
@@ -821,11 +821,11 @@ document.getElementById('btn-expand').addEventListener('click', () => {
 const GROQ_API_KEY = window.GROQ_API_KEY || '';
 const GROQ_MODEL   = 'llama-3.3-70b-versatile';
 const PROMPTS = {
-  color: `Personal stylist. First person. One sentence only — no exceptions.
-Rate how the garment color works with the model's skin tone: undertone compatibility, contrast, whether it pops or washes out. If it doesn't work, say so and name one better color direction. No filler.`,
+  color: `You're a personal stylist. Speak in first person, be direct and concise — 2 sentences max.
+Evaluate how the garment color works with this person's skin tone: undertone compatibility, contrast, whether it pops or washes them out. If it doesn't work, say so plainly and suggest a better color direction. No hedging, no filler.`,
 
-  fit: `Personal stylist. First person. One sentence only — no exceptions.
-Rate the fit and silhouette: does the cut flatter the body, how does it drape, does the style land where it should. If something's off, say so plainly. No filler.`,
+  fit: `You're a personal stylist. Speak in first person, be direct and concise — 2 sentences max.
+Evaluate the fit and silhouette: how the cut sits on the body, whether it flatters, how it drapes. If something's off, say so and suggest what would work better. No hedging, no filler.`,
 };
 
 const analysisCache = {};  // key → { color, fit }
@@ -1007,7 +1007,7 @@ async function callGroq(promptKey, userContent) {
         { role: 'system', content: PROMPTS[promptKey] },
         { role: 'user',   content: userContent }
       ],
-      max_tokens: 80,
+      max_tokens: 120,
       temperature: 0.7
     })
   });
