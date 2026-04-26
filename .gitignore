@@ -1,5 +1,6 @@
-# FASHN inference engine (clone separately on server)
+# Inference engines (clone separately on server)
 fashn-vton-1.5/
+catvton/
 
 # Rendered outputs (generated on server)
 assets/renders/
