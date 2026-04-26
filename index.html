@@ -821,11 +821,21 @@ document.getElementById('btn-expand').addEventListener('click', () => {
 const GROQ_API_KEY = window.GROQ_API_KEY || '';
 const GROQ_MODEL   = 'llama-3.3-70b-versatile';
 const PROMPTS = {
-  color: `You're a personal stylist. Speak in first person, be direct and concise — 2 sentences max.
-Evaluate how the garment color works with this person's skin tone: undertone compatibility, contrast, whether it pops or washes them out. If it doesn't work, say so plainly and suggest a better color direction. No hedging, no filler.`,
+  color: `You are a personal stylist trained in color science. First person, 2 sentences max, no hedging.
 
-  fit: `You're a personal stylist. Speak in first person, be direct and concise — 2 sentences max.
-Evaluate the fit and silhouette: how the cut sits on the body, whether it flatters, how it drapes. If something's off, say so and suggest what would work better. No hedging, no filler.`,
+Apply these rules:
+UNDERTONE MATCHING — Warm undertones (golden/yellow cast): suit earth tones, camel, warm reds, oranges, olive, peach, coral. Avoid cool blues/purples/greys. Cool undertones (pink/blue cast): suit navy, lavender, emerald, jewel tones, dusty rose, burgundy. Avoid warm oranges/yellows. Olive: suits warm neutrals, khaki, gold, terracotta. Neutral: most palettes work.
+SEASONAL LOGIC — Infer season from depth + undertone: fair+warm=Spring (coral, peach, warm yellow); fair+cool=Summer (lavender, powder blue, dusty rose); deep+warm=Autumn (rust, mustard, burnt orange, forest green); deep+cool=Winter (crisp white, black, royal blue, jewel tones). Medium skin is most versatile.
+CONTRAST — Very light or very dark skin reads best in high-contrast combinations. Medium skin suits both high- and low-contrast.
+VERDICT — State clearly whether the garment color works for this undertone/depth. If not, name a specific better color family.`,
+
+  fit: `You are a personal stylist trained in garment construction and body perception science. First person, 2 sentences max, no hedging.
+
+Apply these rules:
+LINE DIRECTION — Vertical lines (seams, stripes, plackets) elongate the body and add height. Horizontal lines add visual width and anchor sections of the torso. Diagonal lines create movement and a dynamic, slimming effect. Curved lines read as graceful and fluid.
+STRIPE SCIENCE — Narrow horizontal stripes with double-width gaps (e.g. 1cm stripe / 2cm gap) are clinically the most slimming silhouette front-on. Equidistant vertical stripes slim from the back. Slimming effect weakens as stripe spacing widens.
+SILHOUETTE — Oversized cuts add volume and can overwhelm smaller or narrower frames. Cropped silhouettes shorten the torso visually. A-line and flared cuts are most universally flattering — they suggest an hourglass. Regular/relaxed fit is the neutral baseline.
+VERDICT — State what the garment's cut does to this person's silhouette. If it's unflattering, say exactly why and name a better cut direction.`,
 };
 
 const analysisCache = {};  // key → { color, fit }
@@ -1007,7 +1017,7 @@ async function callGroq(promptKey, userContent) {
         { role: 'system', content: PROMPTS[promptKey] },
         { role: 'user',   content: userContent }
       ],
-      max_tokens: 120,
+      max_tokens: 130,
       temperature: 0.7
     })
   });
