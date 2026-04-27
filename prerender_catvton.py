@@ -154,8 +154,11 @@ def main():
         print(f"  🎨 render {label} ...", end=" ", flush=True)
 
         try:
-            if pipeline is None:
+            if pipeline is None or automasker is None:
                 print("\n  ⏳ Loading CatVTON pipeline (first time)...")
+                # Reset all to None so a partial failure retries cleanly
+                pipeline = automasker = mask_proc = resize_fn = None
+
                 import torch
                 from diffusers.image_processor import VaeImageProcessor
 
@@ -167,7 +170,7 @@ def main():
                 resize_fn = resize_and_padding
                 dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
 
-                pipeline = CatVTONPipeline(
+                _pipeline = CatVTONPipeline(
                     base_ckpt="booksforcharlie/stable-diffusion-inpainting",
                     attn_ckpt="zhengchong/CatVTON",
                     attn_ckpt_version="mix",
@@ -175,17 +178,19 @@ def main():
                     use_tf32=True,
                     device="cuda",
                 )
-                mask_proc = VaeImageProcessor(
+                _mask_proc = VaeImageProcessor(
                     vae_scale_factor=8,
                     do_normalize=False,
                     do_binarize=True,
                     do_convert_grayscale=True,
                 )
-                automasker = AutoMasker(
+                _automasker = AutoMasker(
                     densepose_ckpt=str(catvton_dir / "DensePose"),
                     schp_ckpt=str(catvton_dir / "SCHP"),
                     device="cuda",
                 )
+                # Only assign if all three succeeded
+                pipeline, mask_proc, automasker = _pipeline, _mask_proc, _automasker
                 print("  ✅ Pipeline loaded\n")
 
             import torch
