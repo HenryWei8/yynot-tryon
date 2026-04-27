@@ -204,9 +204,9 @@ def main():
             person_r  = resize_fn(person,  (W, H))
             garment_r = resize_fn(garment, (W, H))
 
-            # Auto-generate clothing region mask from person image
-            mask_result = automasker(person_r, cloth_type)
-            mask = mask_proc.preprocess(mask_result["mask"], height=H, width=W)[0]
+            # Auto-generate clothing region mask; blur softens edges (matches app.py usage)
+            mask = automasker(person_r, cloth_type)['mask']
+            mask = mask_proc.blur(mask, blur_factor=9)
 
             generator = torch.Generator(device="cuda").manual_seed(args.seed)
 
